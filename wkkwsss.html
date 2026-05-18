@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="id">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuis Biologi Interaktif</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+  <style>
+        body { font-family: 'DM Sans', sans-serif; }
+        .floating-emoji {
+            position: fixed;
+            animation: floatAround 12s infinite ease-in-out;
+            opacity: 0.15;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes floatAround {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+            25% { transform: translateY(-30px) translateX(20px) rotate(5deg); }
+            50% { transform: translateY(-10px) translateX(-15px) rotate(-3deg); }
+            75% { transform: translateY(-40px) translateX(10px) rotate(4deg); }
+        }
+        @keyframes leafFall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        .leaf-fall { animation: leafFall 4s ease-in forwards; position: fixed; top: 0; pointer-events: none; z-index: 50; font-size: 2rem; }
+        .option-btn { transition: all 0.2s; }
+        .option-btn:hover { transform: scale(1.02); }
+        .correct-flash { background: #86efac !important; }
+        .wrong-flash { background: #fca5a5 !important; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
+        .plant-pulse { animation: pulse 0.5s; }
+        @keyframes badgePop { 0%{transform:scale(0)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+        .badge-pop { animation: badgePop 0.6s ease-out; }
+    </style>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js" type="text/javascript"></script>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/resizing_sdk.js" type="text/javascript"></script>
+ </head>
+ <body data-template-id="__page-root" class="min-h-screen relative overflow-hidden"><!-- Floating background emojis -->
+  <div class="floating-emoji" style="top:10%;left:5%">
+   🔬
+  </div>
+  <div class="floating-emoji" style="top:30%;left:85%;animation-delay:-3s">
+   🦠
+  </div>
+  <div class="floating-emoji" style="top:60%;left:15%;animation-delay:-6s">
+   🔬
+  </div>
+  <div class="floating-emoji" style="top:80%;left:75%;animation-delay:-9s">
+   🦠
+  </div>
+  <div class="floating-emoji" style="top:50%;left:50%;animation-delay:-4s">
+   🧫
+  </div>
+  <div class="floating-emoji" style="top:20%;left:60%;animation-delay:-7s">
+   🧬
+  </div>
+  <main class="relative z-10 max-w-2xl mx-auto p-4 sm:p-6"><!-- Welcome Screen -->
+   <div id="welcome-screen" class="text-center py-12">
+    <div class="text-6xl mb-4">
+     🌱🦠🧬
+    </div>
+    <h1 data-template-id="main-title" class="canva-text text-3xl font-bold mb-2">Kuis Biologi Interaktif</h1>
+    <p data-template-id="main-subtitle" class="canva-text text-lg mb-8">Uji pengetahuan biologimu sekarang!</p>
+    <h2 data-template-id="difficulty-label" class="canva-text font-bold text-xl mb-4">Pilih Tingkat Kesulitan</h2>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center"><button data-template-id="btn-easy" class="canva-button option-btn px-6 py-3 rounded-xl font-bold text-lg shadow-md" onclick="startQuiz('easy')"></button> <button data-template-id="btn-medium" class="canva-button option-btn px-6 py-3 rounded-xl font-bold text-lg shadow-md" onclick="startQuiz('medium')"></button> <button data-template-id="btn-hard" class="canva-button option-btn px-6 py-3 rounded-xl font-bold text-lg shadow-md" onclick="startQuiz('hard')"></button>
+    </div>
+   </div><!-- Quiz Screen -->
+   <div id="quiz-screen" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+     <div id="plant-progress" class="text-4xl plant-pulse">
+      🌱
+     </div>
+     <div class="text-right"><span data-template-id="score-label" class="canva-text font-medium"></span> <span id="score-display" class="font-bold text-lg">0</span> <span id="question-counter" class="block text-sm opacity-70"></span>
+     </div>
+    </div>
+    <div data-template-id="question-card" class="canva-card rounded-2xl p-6 shadow-lg mb-4">
+     <p id="question-text" class="text-xl font-medium mb-1"></p>
+    </div>
+    <div id="options-container" class="grid gap-3"></div>
+    <div id="feedback" class="hidden text-center mt-4 p-3 rounded-xl font-bold text-lg"></div>
+   </div><!-- Completion Screen -->
+   <div id="completion-screen" class="hidden text-center py-8">
+    <div class="badge-pop inline-block mb-4">
+     <div data-template-id="badge-container" class="canva-card rounded-3xl p-8 shadow-2xl inline-block">
+      <div class="text-5xl mb-3">
+       🔬🧪🧬
+      </div>
+      <h2 data-template-id="badge-title" class="canva-text text-2xl font-bold mb-1"></h2>
+      <p data-template-id="badge-subtitle" class="canva-text text-lg"></p>
+      <div class="text-4xl mt-3">
+       🌳
+      </div>
+      <p id="final-score" class="text-xl font-bold mt-2"></p>
+     </div>
+    </div>
+    <div class="mt-6"><button data-template-id="btn-restart" class="canva-button px-8 py-3 rounded-xl font-bold text-lg shadow-md" onclick="resetQuiz()"></button>
+    </div>
+   </div>
+  </main>
+  <script src="/_sdk/editing_sdk.js"></script>
+  <script>
+    const questions = {
+        easy: [
+            {q:"🦠 Bagian sel yang mengontrol semua aktivitas sel disebut?", o:["Nukleus","Mitokondria","Ribosom","Membran sel"], a:0},
+            {q:"🌱 Proses tumbuhan membuat makanan dengan cahaya matahari disebut?", o:["Respirasi","Fotosintesis","Fermentasi","Transpirasi"], a:1},
+            {q:"🦠 Organel sel yang menghasilkan energi adalah?", o:["Ribosom","Vakuola","Mitokondria","Lisosom"], a:2},
+            {q:"🌱 Gas yang dibutuhkan tumbuhan untuk fotosintesis?", o:["Oksigen","Nitrogen","Karbon dioksida","Hidrogen"], a:2},
+            {q:"🧬 Hewan yang menyusui anaknya termasuk kelas?", o:["Reptilia","Aves","Mamalia","Amphibia"], a:2},
+            {q:"🦠 Dinding sel ditemukan pada sel?", o:["Hewan","Tumbuhan","Keduanya","Tidak ada"], a:1},
+            {q:"🌱 Warna hijau pada daun berasal dari?", o:["Klorofil","Karotenoid","Xantofil","Melanin"], a:0},
+            {q:"🧬 Kupu-kupu termasuk kelompok?", o:["Mamalia","Insekta","Arachnida","Reptilia"], a:1},
+            {q:"🦠 Bagian sel yang melindungi isi sel?", o:["Nukleus","Sitoplasma","Membran sel","Ribosom"], a:2},
+            {q:"🌱 Hasil fotosintesis adalah glukosa dan?", o:["Karbon dioksida","Air","Oksigen","Nitrogen"], a:2}
+        ],
+        medium: [
+            {q:"🧫 Retikulum endoplasma kasar memiliki apa di permukaannya?", o:["Mitokondria","Ribosom","Lisosom","Vakuola"], a:1},
+            {q:"🌱 Reaksi terang fotosintesis terjadi di?", o:["Stroma","Tilakoid","Sitoplasma","Nukleus"], a:1},
+            {q:"🧬 Hewan berdarah dingin disebut?", o:["Endoterm","Ektoterm","Homoiterm","Autoterm"], a:1},
+            {q:"🦠 Fungsi badan Golgi adalah?", o:["Menghasilkan energi","Mengemas protein","Sintesis protein","Pencernaan sel"], a:1},
+            {q:"🌱 Stomata berfungsi untuk?", o:["Menyerap air","Pertukaran gas","Fotosintesis","Menyimpan makanan"], a:1},
+            {q:"🧬 Ciri-ciri Arthropoda adalah?", o:["Bertulang belakang","Kaki beruas-ruas","Berlendir","Bersirip"], a:1},
+            {q:"🧫 Lisosom berfungsi sebagai?", o:["Pencernaan intrasel","Fotosintesis","Respirasi","Pembelahan sel"], a:0},
+            {q:"🌱 Pigmen yang menangkap cahaya merah dan biru?", o:["Karotenoid","Fikosianin","Klorofil a","Xantofil"], a:2},
+            {q:"🧬 Ikan paus termasuk kelas apa?", o:["Pisces","Reptilia","Mamalia","Amphibia"], a:2},
+            {q:"🦠 Vakuola pada sel tumbuhan berfungsi?", o:["Menghasilkan energi","Menyimpan cadangan makanan","Sintesis protein","Pembelahan sel"], a:1}
+        ],
+        hard: [
+            {q:"🧫 Siklus Calvin terjadi di bagian kloroplas yang disebut?", o:["Tilakoid","Membran dalam","Stroma","Grana"], a:2},
+            {q:"🧬 Binomial nomenklatur dikembangkan oleh?", o:["Darwin","Linnaeus","Mendel","Lamarck"], a:1},
+            {q:"🦠 Tahap pembelahan mitosis yang kromosom berjajar di tengah?", o:["Profase","Metafase","Anafase","Telofase"], a:1},
+            {q:"🌱 Akseptor elektron terakhir dalam rantai transpor elektron fotosintesis?", o:["O₂","NADP⁺","H₂O","ATP"], a:1},
+            {q:"🧬 Kingdom Fungi bersifat?", o:["Autotrof","Heterotrof","Kemoautotrof","Fotoautotrof"], a:1},
+            {q:"🧫 Protein channel dan carrier terdapat di?", o:["Nukleus","Membran sel","Ribosom","Badan Golgi"], a:1},
+            {q:"🦠 Organel yang mengandung enzim katalase?", o:["Lisosom","Peroksisom","Mitokondria","Ribosom"], a:1},
+            {q:"🌱 Fiksasi CO₂ pada tumbuhan C4 pertama menghasilkan?", o:["3-PGA","Oksaloasetat","G3P","RuBP"], a:1},
+            {q:"🧬 Filum Chordata dicirikan oleh adanya?", o:["Eksoskeleton","Notokorda","Kaki beruas","Simetri radial"], a:1},
+            {q:"🧫 Fosforilasi oksidatif terjadi di?", o:["Sitoplasma","Membran dalam mitokondria","Nukleus","Ribosom"], a:1}
+        ]
+    };
+
+    let currentQuiz = [];
+    let currentIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    const plantStages = ['🌱','🌱','🌱','🌿','🌿','🌿','🌿','🌳','🌳','🌳','🌳'];
+
+    function startQuiz(difficulty) {
+        currentQuiz = [...questions[difficulty]].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIndex = 0;
+        score = 0;
+        answered = false;
+        document.getElementById('welcome-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        document.getElementById('completion-screen').classList.add('hidden');
+        updateQuestion();
+    }
+
+    function updateQuestion() {
+        const q = currentQuiz[currentIndex];
+        document.getElementById('question-text').textContent = q.q;
+        document.getElementById('score-display').textContent = score;
+        document.getElementById('question-counter').textContent = `${currentIndex+1} / ${currentQuiz.length}`;
+        document.getElementById('plant-progress').textContent = plantStages[score];
+        document.getElementById('feedback').classList.add('hidden');
+        answered = false;
+
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        q.o.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn text-left p-4 rounded-xl font-medium text-base shadow-sm border-2 border-transparent bg-white/90 hover:border-emerald-400 transition-all';
+            btn.textContent = opt;
+            btn.onclick = () => selectAnswer(i, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectAnswer(index, btn) {
+        if (answered) return;
+        answered = true;
+        const correct = currentQuiz[currentIndex].a;
+        const buttons = document.getElementById('options-container').children;
+
+        if (index === correct) {
+            btn.classList.add('correct-flash');
+            score++;
+            document.getElementById('score-display').textContent = score;
+            const plant = document.getElementById('plant-progress');
+            plant.textContent = plantStages[score];
+            plant.classList.remove('plant-pulse');
+            void plant.offsetWidth;
+            plant.classList.add('plant-pulse');
+        } else {
+            btn.classList.add('wrong-flash');
+            buttons[correct].classList.add('correct-flash');
+        }
+
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < currentQuiz.length) {
+                updateQuestion();
+            } else {
+                showCompletion();
+            }
+        }, 1200);
+    }
+
+    function showCompletion() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('completion-screen').classList.remove('hidden');
+        document.getElementById('final-score').textContent = `Skor: ${score} / ${currentQuiz.length}`;
+
+        // Floating leaves
+        for (let i = 0; i < 15; i++) {
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf-fall';
+            leaf.textContent = '🍃';
+            leaf.style.left = Math.random() * 100 + '%';
+            leaf.style.animationDelay = Math.random() * 3 + 's';
+            document.body.appendChild(leaf);
+            setTimeout(() => leaf.remove(), 7000);
+        }
+    }
+
+    function resetQuiz() {
+        document.getElementById('completion-screen').classList.add('hidden');
+        document.getElementById('welcome-screen').classList.remove('hidden');
+    }
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fd7a29645954ad7',t:'MTc3OTA3MzQ3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
